@@ -27,14 +27,49 @@ class _SessionsPageState extends State<SessionsPage> {
             if (!snapshot.hasData) {
               return new Container();
             }
-            Sessions content = snapshot.data;
+
+            var map = new Map<DateTime, List<SessionValueObject>>();
+            // 日時でセクションを作る
+            snapshot.data.sessions.forEach((session) {
+              if (map[session.startsAt] == null) {
+                map[session.startsAt] = new List<SessionValueObject>();
+              }
+              map[session.startsAt].add(session);
+            });
+
+            var items = new List<StatelessWidget>();
+            map.forEach((date, sessions) {
+              items.add(new _SectionItem(date));
+              sessions.forEach((session) => items.add(new _SessionItem(session)));
+            });
+
             return new ListView.builder(
-              padding: new EdgeInsets.all(8.0),
-              itemCount: content.sessions.length,
-              itemBuilder: (BuildContext context, int index) => new _SessionItem(content.sessions[index]),
+                padding: new EdgeInsets.all(8.0),
+                itemCount: items.length,
+                itemBuilder: (BuildContext context, int index) => items[index]
             );
           }
       ),
+    );
+  }
+}
+
+class _SectionItem extends StatelessWidget {
+  const _SectionItem(this.date);
+
+  final DateTime date;
+
+  @override
+  Widget build(BuildContext context) {
+    final dateFormat = new DateFormat('MM月dd日hh時mm分');
+    return new Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget> [new Container(
+          decoration: new BoxDecoration(color: Colors.lightGreen),
+          child: new Center(
+            child: new Text(dateFormat.format(date)),
+          ),
+        )]
     );
   }
 }
@@ -46,23 +81,19 @@ class _SessionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var children = <Widget> [
+      new Container(
+          padding: new EdgeInsets.only(left: 0.0, top: 10.0, bottom: 0.0, right: 0.0)),
+      new Text(session.title)];
+    session.speakers.map((h) => new Text(h.fullName + " -- " + session.room.name )).forEach((h) => children.add(h));
 
-    // １行のデータを設定
-    final dateFormat = new DateFormat('MM月dd日hh時mm分');
-    var children= <Widget> [
-      new Text(dateFormat.format(session.startsAt) + " から " + dateFormat.format(session.endsAt)),
-      new Text(session.title),
-    ];
-    session.speakers.map((h) => new Text(h.fullName)).forEach((h) => children.add(h));
-    children.add(new Text(session.room.name));
-
-    // ボーダーとパディングを設定
+    // ボーダーを設定
     children.add(new Container(
-      padding: new EdgeInsets.only(left: 0.0, top: 10.0, bottom: 10.0, right: 0.0),
+      padding: new EdgeInsets.only(left: 0.0, top: 10.0, bottom: 0.0, right: 0.0),
       child: new Container(
-      decoration: new BoxDecoration(
-        border: new Border.all(width: 0.5, color: Colors.black38),
-      )),
+          decoration: new BoxDecoration(
+            border: new Border.all(width: 0.5, color: Colors.black38),
+          )),
     ));
 
     return new Column(
